@@ -68,7 +68,7 @@ body{background:#fff5e6;padding:15px}
 </style>
 </head>
 <body>
-
+ 
 <div id="authScreen"><div class="auth-card">
 <h2>💡 Hiten Auto</h2>
 <p style="font-size:13px;margin-bottom:15px;color:#666;">Enter password to manage stock</p>
@@ -77,20 +77,20 @@ body{background:#fff5e6;padding:15px}
 <button class="auth-btn" onclick="handleAuthSubmit()">Unlock Shop</button>
 <div class="reset-link" onclick="resetAllData()">Reset App on this phone</div>
 </div></div>
-
+ 
 <div id="appScreen"><div class="container">
 <div class="header">
 <button class="logout-btn" onclick="location.reload()">Log out</button>
 <h1>Hiten Auto Mobile</h1>
 <p style="font-size:12px;opacity:.8;">Digital Stock Register</p>
 </div>
-
+ 
 <div class="stats">
 <div class="stat-card"><div class="stat-number" id="totalItems">0</div><div style="font-size:11px">Total</div></div>
 <div class="stat-card"><div class="stat-number" id="lowStockCount">0</div><div style="font-size:11px">Low</div></div>
 <div class="stat-card"><div class="stat-number" id="categoryCount">0</div><div style="font-size:11px">Categories</div></div>
 </div>
-
+ 
 <div class="bill-section">
 <div style="font-weight:bold;font-size:16px;">📷 Scan Bill</div>
 <div class="bill-btn-row">
@@ -106,22 +106,22 @@ body{background:#fff5e6;padding:15px}
 <input type="file" id="billCamInput" accept="image/*" capture="environment" style="display:none" onchange="handleBillFileSelected(event)">
 <input type="file" id="billFileInput" accept="image/*,application/pdf" multiple style="display:none" onchange="handleBillFileSelected(event)">
 </div>
-
+ 
 <div class="sync-row">
 <span id="syncStatus"></span>
 <button class="sync-btn" onclick="refreshFromSheet(true)">🔄 Refresh</button>
 <button class="sync-btn" onclick="openSetupModal()">⚙️ Setup</button>
 </div>
-
+ 
 <div class="controls-row">
 <input type="text" class="search-box" id="searchInput" placeholder="Search product...">
 <button class="add-product-btn" onclick="openAddProductModal()">➕ Item</button>
 </div>
-
+ 
 <div class="category-tabs" id="categoryTabs"></div>
 <div id="productsGrid"></div>
 </div></div>
-
+ 
 <div class="modal-overlay" id="setupModal"><div class="modal-box">
 <h3>⚙️ Setup</h3>
 <label class="lbl">Google Sheet web app URL (ends with /exec)</label>
@@ -134,7 +134,7 @@ body{background:#fff5e6;padding:15px}
 <button class="modal-btn" style="background:#fde68a;" onclick="seedSheet()">Upload this phone's list to an EMPTY sheet</button>
 <button class="modal-btn" onclick="closeSetupModal()">Cancel</button>
 </div></div>
-
+ 
 <div class="modal-overlay" id="billReviewModal"><div class="modal-box">
 <h3 id="billReviewTitle">Confirm Scanned Items</h3>
 <p style="font-size:12px;margin-bottom:10px;color:#666;">Check matches before updating stock. Blue = new item (will be added to the sheet).</p>
@@ -142,7 +142,7 @@ body{background:#fff5e6;padding:15px}
 <button class="modal-btn" style="background:#16a34a;color:#fff;" onclick="confirmBillReview()">Update Stock Now</button>
 <button class="modal-btn" onclick="closeBillReview()">Cancel</button>
 </div></div>
-
+ 
 <div class="modal-overlay" id="addProductModal"><div class="modal-box">
 <h3>Add New Product</h3>
 <input type="text" id="newProdName" placeholder="Product Name">
@@ -151,9 +151,9 @@ body{background:#fff5e6;padding:15px}
 <button class="modal-btn" style="background:#c2410c;color:#fff;" onclick="addNewProduct()">Save</button>
 <button class="modal-btn" onclick="closeAddProductModal()">Cancel</button>
 </div></div>
-
+ 
 <div id="toast"></div>
-
+ 
 <script>
 /* =========================================================
    FULL MERGED CATALOG — union of BOTH files (nothing dropped)
@@ -162,7 +162,7 @@ body{background:#fff5e6;padding:15px}
    ranges so all its products survive intact.
    ========================================================= */
 const STOCK_VERSION='catalog-2026-09-v8-union-complete';
-
+ 
 const CATALOG_TXT=`
 3001|Santro old F/Rh|Power Window Switch
 3002|I20 Elite 4-Door F/Rh|Power Window Switch
@@ -1961,14 +1961,14 @@ const CATALOG_TXT=`
 7521|Indica (R.G Handle)|D.L.J.M Handle
 7522|Sliding Dabbi (R.G Handle)|D.L.J.M Handle
 `;
-
+ 
 const INITIAL_STOCK = CATALOG_TXT.trim().split('\n').map(line=>{
   const a=line.indexOf('|'), b=line.indexOf('|',a+1);
   return {id:parseInt(line.slice(0,a),10), product:line.slice(a+1,b), category:line.slice(b+1), stock:0, lowThreshold:2};
 });
-
+ 
 const MODEL_FALLBACKS=['gemini-3.6-flash','gemini-3.1-flash-lite','gemini-2.5-flash','gemini-2.0-flash-lite','gemini-1.5-flash-lite','gemini-1.0-flash-lite','gemini-0.5-flash-lite','gemini-0.1-flash-lite','gemini-0.0-flash-lite','gemini-3.6','gemini-3.1','gemini-2.5','gemini-2.0','gemini-1.5','gemini-1.0','gemini-0.5','gemini-0.1','gemini-0.0'];
-
+ 
 let TYPES = [
   'Power Window Switch','Mirror Switch','Dicky Switch','Centre Lock','Spiral',
   'Fuel Pump Motor','Power Window Motor','Fan Motor','IOC Value','Misc Switch',
@@ -1977,15 +1977,15 @@ let TYPES = [
   'Depon - Head Light','Depon - Tail Light','Swipe Water Pump Assemblies',
   'A/C Filter','D.L.J.M Handle'
 ];
-
+ 
 let inventory=[], selectedCategory='All', pendingBillType=null, pendingBillItems=[], scanBusy=false, scanToken=0, tabList=[];
-
+ 
 const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';clearTimeout(toast._t);toast._t=setTimeout(()=>t.style.display='none',3500)}
 function setSync(msg){document.getElementById('syncStatus').textContent=msg}
 const itemKey=o=>(String(o.product||'')+'|'+String(o.category||'Other')).toLowerCase().replace(/\s+/g,' ').trim();
-
+ 
 function handleAuthSubmit(){
   const pw=document.getElementById('authPasswordInput').value, saved=localStorage.getItem('shopPw');
   if(!saved){const conf=document.getElementById('authPasswordConfirm').value; if(pw&&pw===conf){localStorage.setItem('shopPw',pw);showApp()}else alert("Set a password first!")}
@@ -2010,11 +2010,11 @@ function resetAllData(){
   const keep={};['sheetUrl','geminiKey','geminiModel'].forEach(k=>{const v=localStorage.getItem(k);if(v)keep[k]=v});
   localStorage.clear();Object.keys(keep).forEach(k=>localStorage.setItem(k,keep[k]));location.reload();
 }
-
+ 
 let pendingOps=JSON.parse(localStorage.getItem('pendingOps')||'[]'),flushing=false,sheetEmpty=false;
 const sheetUrl=()=>(localStorage.getItem('sheetUrl')||'').trim();
 const savePending=()=>localStorage.setItem('pendingOps',JSON.stringify(pendingOps));
-
+ 
 async function fetchJson(url,opts,ms,holder){
   const ctl=new AbortController();if(holder)holder.ctl=ctl;
   const timer=setTimeout(()=>ctl.abort(),ms);
@@ -2032,7 +2032,7 @@ function sheetError(e){
 }
 async function sheetPost(payload){try{const d=await fetchJson(sheetUrl(),{method:'POST',body:JSON.stringify(payload)},40000);if(!d.ok)throw new Error(d.error||'Sheet error');return d}catch(e){throw new Error(sheetError(e))}}
 async function sheetGet(){try{const d=await fetchJson(sheetUrl()+(sheetUrl().includes('?')?'&':'?')+'t='+Date.now(),{},40000);if(!d.ok)throw new Error(d.error||'Sheet error');return d}catch(e){throw new Error(sheetError(e))}}
-
+ 
 function queueOps(list){list.forEach(op=>{op.opId=Date.now().toString(36)+Math.random().toString(36).slice(2,8);pendingOps.push(op)});savePending();flushOps()}
 async function flushOps(){
   if(!sheetUrl()||flushing||!pendingOps.length)return;
@@ -2066,7 +2066,7 @@ async function refreshFromSheet(manual){
     sheetEmpty=false;applyRemote(d.items);setSync('✅ Synced with sheet');
   }catch(e){setSync('⚠️ '+e.message+' (showing the copy saved on this phone)')}
 }
-
+ 
 function openSetupModal(){
   document.getElementById('sheetUrlInput').value=localStorage.getItem('sheetUrl')||'';
   document.getElementById('geminiKeyInput').value=localStorage.getItem('geminiKey')||'';
@@ -2091,7 +2091,7 @@ async function seedSheet(){
     setSync('✅ Uploaded '+d.items.length+' items to the sheet');
   }catch(e){alert(e.message);setSync('⚠️ Upload failed')}
 }
-
+ 
 function updateDisplay(){
   document.getElementById('totalItems').textContent=inventory.reduce((s,i)=>s+i.stock,0);
   document.getElementById('lowStockCount').textContent=inventory.filter(i=>i.stock<i.lowThreshold).length;
@@ -2114,6 +2114,7 @@ function renderGrid(){
       <input type="number" inputmode="numeric" min="1" class="qty-input" id="qty-${item.id}" placeholder="1">
       <button class="btn-icon" style="background:#dcfce7" onclick="adj(${item.id},1)">+</button>
       <button class="btn-icon" style="background:#fee2e2" onclick="adj(${item.id},-1)">-</button>
+      <button class="btn-icon" style="background:#f3f4f6" onclick="deleteProduct(${item.id})">🗑</button>
       </div></div>`;
     });
     html+=`</div>`;
@@ -2132,7 +2133,16 @@ function adj(id,sign){
   saveData();updateDisplay();
   if(op)queueOps([op]);
 }
-
+function deleteProduct(id){
+  const item=inventory.find(x=>x.id===id);if(!item)return;
+  if(!confirm('Delete "'+item.product+'" ('+item.category+')?\nCurrent stock: '+item.stock))return;
+  inventory=inventory.filter(x=>x.id!==id);
+  if(selectedCategory!=='All'&&!inventory.some(i=>i.category===selectedCategory))selectedCategory='All';
+  saveData();updateDisplay();
+  queueOps([{type:'delete',id:item.id,key:itemKey(item)}]);
+  toast('Item deleted');
+}
+ 
 const STOP=new Set(['power','window','switch','sw','pcs','pc','nos','no','set','the','for','and','of','rs','qty']);
 function normTokens(str){
   let s=' '+String(str||'').toLowerCase()+' ';
@@ -2186,7 +2196,7 @@ function findMatches(name){
   });
   return scored.filter(x=>x.score>.15).sort((a,b)=>b.score-a.score).slice(0,6);
 }
-
+ 
 let billSource=localStorage.getItem('billSource')||'cam';
 function paintSource(){
   document.getElementById('srcCam').classList.toggle('active',billSource==='cam');
@@ -2231,7 +2241,7 @@ function parseItems(txt){
   if(!Array.isArray(arr))throw new SyntaxError('Not a list');
   return arr.map(x=>({name:String(x.name||x.item||'').trim(),qty:Math.max(1,parseInt(x.qty||x.quantity)||1)})).filter(x=>x.name);
 }
-
+ 
 let scanCtl={ctl:null},scanLabel='',scanBase='',scanStart=0,scanTimer=null;
 function paintStatus(){
   const s=(scanBase&&scanStart)?' ['+Math.round((Date.now()-scanStart)/1000)+'s]':'';
@@ -2375,7 +2385,7 @@ function confirmBillReview(){
   pendingBillType=null;pendingBillItems=[];
 }
 function closeBillReview(){document.getElementById('billReviewModal').classList.remove('open')}
-
+ 
 function allCategories(){const known=new Set(TYPES);inventory.forEach(i=>known.add(i.category));return[...known]}
 function onNewCategoryChange(v){document.getElementById('newProdCategoryCustom').style.display=v==='__new__'?'block':'none'}
 function openAddProductModal(){
@@ -2402,7 +2412,7 @@ function addNewProduct(){
   selectedCategory=type;closeAddProductModal();updateDisplay();window.scrollTo(0,0);
   queueOps([{type:'add',id:n.id,product:name,company:'General',itemType:type,stock:0,lowThreshold:2}]);
 }
-
+ 
 function busyUI(){
   if(scanBusy||flushing||pendingOps.length)return true;
   if(document.querySelector('.modal-overlay.open'))return true;
